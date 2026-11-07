@@ -2,358 +2,514 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Control Docente</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Escolar — Prof. Facundo</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- SheetJS para Excel / CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- Chart.js para estadísticas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    :root {
-      --bg: #070b13;
-      --card: #0d1527;
-      --border: #1e293b;
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --presente: #10b981;
-      --ausente: #ef4444;
-      --tarde: #f59e0b;
-      --primary: #0ea5e9;
-      --input-bg: #050811;
+    .btn-amber {
+      background-color: #e09f00;
+      color: #ffffff;
+      font-weight: 600;
+      transition: all 0.2s ease;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background-color: var(--bg); color: var(--text); padding: 12px; padding-bottom: 85px; }
-
-    header {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .brand-title { font-size: 1.05rem; font-weight: 700; color: #fff; }
-    
-    .btn-undo {
-      background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.3);
-      color: #38bdf8; padding: 7px 12px; border-radius: 8px; font-size: 0.8rem;
-      font-weight: 700; cursor: pointer;
-    }
-    .btn-undo:disabled { opacity: 0.3; cursor: not-allowed; }
-
-    .filter-panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-    .filter-group { display: flex; flex-direction: column; gap: 4px; }
-    label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--muted); }
-    select, input[type="date"] {
-      background: var(--input-bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      outline: none;
-      width: 100%;
-    }
-
-    .stats-bar {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-    .stat-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px;
-      text-align: center;
-    }
-    .stat-val { font-size: 1.3rem; font-weight: 800; display: block; }
-    .stat-lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; font-weight: 600; }
-    .val-p { color: var(--presente); }
-    .val-a { color: var(--ausente); }
-    .val-t { color: var(--tarde); }
-
-    .alumnos-list { display: flex; flex-direction: column; gap: 8px; }
-    .alumno-row {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .alumno-info { flex: 1; min-width: 0; }
-    .alumno-name { font-size: 1rem; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .alumno-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
-
-    .alumno-ctrls { display: flex; align-items: center; gap: 8px; }
-
-    .input-nota {
-      width: 50px; height: 48px; text-align: center;
-      background: var(--input-bg); border: 1px solid var(--border);
-      border-radius: 8px; color: #fff; font-size: 1.1rem; font-weight: 700;
-      outline: none;
-    }
-
-    .btn-asist {
-      width: 50px; height: 48px; border-radius: 8px; border: none;
-      font-weight: 800; font-size: 1.15rem; color: #fff; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .st-P { background-color: var(--presente); }
-    .st-A { background-color: var(--ausente); }
-    .st-T { background-color: var(--tarde); color: #000; }
-
-    .bottom-bar {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(7, 11, 19, 0.95);
-      backdrop-filter: blur(8px);
-      border-top: 1px solid var(--border);
-      padding: 10px 14px;
-      display: flex; gap: 10px; z-index: 50;
-    }
-    .btn-action {
-      flex: 1; padding: 12px; border-radius: 8px; border: none;
-      font-weight: 700; font-size: 0.9rem; cursor: pointer;
-    }
-    .btn-add { background: var(--card); color: #fff; border: 1px solid var(--border); }
-    .btn-sync { background: var(--primary); color: #fff; }
-
-    #toast {
-      position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%);
-      background: #0284c7; color: #fff; padding: 8px 16px; border-radius: 30px;
-      font-size: 0.8rem; font-weight: 600; opacity: 0; pointer-events: none;
-      transition: opacity 0.2s ease; z-index: 2000;
+    .btn-amber:hover {
+      background-color: #c98e00;
+      transform: translateY(-1px);
     }
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans transition-colors duration-200" id="body-app">
 
-  <header>
-    <div class="brand-title">Control Docente</div>
-    <button class="btn-undo" id="btnUndo" onclick="deshacer()" disabled>↩ Deshacer</button>
+  <!-- HEADER / NAVBAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xl shadow-md">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">TuProfeWeb <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold ml-1">Dashboard</span></h1>
+          <p class="text-xs text-slate-500">Gestión de Clases &middot; Prof. Facundo Casciano</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <span id="current-date-badge" class="hidden sm:inline-block text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+          <i class="fa-regular fa-calendar mr-1"></i> <span id="fecha-hoy-txt"></span>
+        </span>
+        <button onclick="toggleDarkMode()" class="p-2 text-slate-600 hover:text-amber-600 hover:bg-slate-100 rounded-lg text-sm transition">
+          <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+        </button>
+        <button onclick="exportarTodoExcel()" class="btn-amber text-xs sm:text-sm px-3.5 py-2 rounded-lg flex items-center space-x-1.5 shadow-sm">
+          <i class="fa-solid fa-file-excel"></i>
+          <span class="hidden sm:inline">Exportar Respaldo</span>
+        </button>
+      </div>
+    </div>
   </header>
 
-  <div class="filter-panel">
-    <div class="filter-group">
-      <label>Día / Materia / Escuela</label>
-      <select id="selMateria" onchange="cambiarMateria()">
-        <option value="lun_tec5_so">Lunes: Lab. Sistemas Operativos (4° - Técnica 5)</option>
-        <option value="mar_tec2_mpe">Martes: Montaje de Proyectos (4° - Técnica 2 Hurlingham)</option>
-        <option value="mar_tec1_ea">Martes: Electrónica Analógica (4° - Técnica 1)</option>
-        <option value="mie_tec2_das">Miércoles: DAS (5° - Técnica 2 Hurlingham)</option>
-        <option value="mie_tec1_ea">Miércoles: Electrónica Analógica (4° - Técnica 1)</option>
-        <option value="vie_tec1_mpe">Viernes Noche: Montaje de Proyectos (4° 3° - Técnica 1)</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label>Fecha de Clase</label>
-      <input type="date" id="fechaClase" onchange="renderAlumnos()">
-    </div>
-  </div>
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
 
-  <div class="stats-bar">
-    <div class="stat-card">
-      <span class="stat-val val-p" id="cntP">0</span>
-      <span class="stat-lbl">Presentes</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-val val-a" id="cntA">0</span>
-      <span class="stat-lbl">Ausentes</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-val val-t" id="cntT">0</span>
-      <span class="stat-lbl">Tardes</span>
-    </div>
-  </div>
+    <!-- KPI STATS CARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-500">Total Estudiantes</p>
+          <h3 id="stat-total-alumnos" class="text-2xl font-bold text-slate-800">74</h3>
+        </div>
+      </div>
 
-  <main class="alumnos-list" id="lista"></main>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-500">% Asistencia Promedio</p>
+          <h3 id="stat-asistencia-promedio" class="text-2xl font-bold text-emerald-600">88.4%</h3>
+        </div>
+      </div>
 
-  <div class="bottom-bar">
-    <button class="btn-action btn-add" onclick="agregarAlumno()">+ Alumno</button>
-    <button class="btn-action btn-sync" onclick="guardar()">Guardar Lista</button>
-  </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-school"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-500">Colegios Activos</p>
+          <h3 id="stat-colegios-count" class="text-2xl font-bold text-blue-600">3</h3>
+        </div>
+      </div>
 
-  <div id="toast"></div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="w-12 h-12 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </div>
+        <div>
+          <p class="text-xs font-medium text-slate-500">Atención Faltas</p>
+          <h3 id="stat-alumnos-riesgo" class="text-2xl font-bold text-rose-600">4</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- SELECTOR DE COLEGIO Y CURSOS -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <!-- Panel de Colegios -->
+      <div class="md:col-span-1 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center justify-between">
+          <span>Colegios</span>
+          <span class="text-xs text-amber-600 font-normal"><i class="fa-solid fa-building-columns"></i></span>
+        </h2>
+        <div id="lista-colegios" class="space-y-1.5"></div>
+      </div>
+
+      <!-- Panel de Cursos -->
+      <div class="md:col-span-3 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h2 id="colegio-seleccionado-titulo" class="text-lg font-bold text-slate-900">Tecnica N° 1 045</h2>
+            <p class="text-xs text-slate-500">Seleccioná un curso para registrar asistencia o cargar notas</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <label class="btn-amber cursor-pointer text-xs px-3 py-2 rounded-lg flex items-center space-x-1.5 shadow-sm">
+              <i class="fa-solid fa-file-arrow-up"></i>
+              <span>Subir Excel/CSV</span>
+              <input type="file" id="input-excel-file" accept=".xlsx,.xls,.csv" class="hidden" onchange="importarArchivoExcel(event)">
+            </label>
+          </div>
+        </div>
+        <div id="lista-cursos" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN DE ASISTENCIA / NOTAS -->
+    <div id="seccion-curso-activo" class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-200">
+        <div>
+          <span id="badge-turno" class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800">Mañana</span>
+          <h2 id="curso-activo-titulo" class="text-xl font-bold text-slate-900 mt-1">4° 3 MONTAJE GB</h2>
+          <p id="curso-activo-subtitulo" class="text-xs text-slate-500">13 estudiantes registrados &middot; Tecnica N° 2 135</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 text-xs">
+            <i class="fa-regular fa-calendar-days text-slate-400 mr-1.5"></i>
+            <input type="date" id="fecha-asistencia" class="bg-transparent font-medium text-slate-700 outline-none" onchange="cambiarFechaAsistencia()">
+          </div>
+          <button onclick="marcarTodos('P')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-lg font-medium shadow-sm transition">
+            <i class="fa-solid fa-check-double mr-1"></i> Todos Presentes
+          </button>
+          <button onclick="abrirModalNuevoAlumno()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-2 rounded-lg font-medium shadow-sm transition">
+            <i class="fa-solid fa-user-plus mr-1"></i> + Alumno
+          </button>
+        </div>
+      </div>
+
+      <!-- TABLA DE ALUMNOS -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-600 text-xs uppercase tracking-wider border-b border-slate-200">
+              <th class="py-3 px-4 font-semibold">#</th>
+              <th class="py-3 px-4 font-semibold">Apellido y Nombre</th>
+              <th class="py-3 px-4 font-semibold text-center">Estado Hoy</th>
+              <th class="py-3 px-4 font-semibold text-center">Calificación</th>
+              <th class="py-3 px-4 font-semibold text-center">Total Faltas</th>
+              <th class="py-3 px-4 font-semibold text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-estudiantes-tbody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- GRÁFICO -->
+    <div class="mt-8 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Estadísticas de Asistencia Semanal</h3>
+      <div class="h-64">
+        <canvas id="graficoAsistencias"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-8">
+    <p>TuProfeWeb &copy; 2026 &middot; Diseñado para Educación Técnica</p>
+  </footer>
 
   <script>
-    const baseInicial = {
-      "lun_tec5_so": [
-        { id: 1, nombre: "Álvarez, Lucas", estado: "P", nota: "" },
-        { id: 2, nombre: "Benítez, Diego", estado: "P", nota: "" },
-        { id: 3, nombre: "Castillo, Ramiro", estado: "A", nota: "" }
+    const DATOS_BASE = {
+      colegios: [
+        { id: 1, nombre: "Tecnica N° 1 045" },
+        { id: 2, nombre: "Tecnica N° 2 135" },
+        { id: 3, nombre: "Tecnica N° 5 045" }
       ],
-      "mar_tec2_mpe": [
-        { id: 4, nombre: "Díaz, Franco", estado: "P", nota: "" },
-        { id: 5, nombre: "Fernández, Tomás", estado: "P", nota: "" }
+      cursos: [
+        { id: 7, colegio_id: 1, nombre: "4° 1 ANALÓGICA GB", turno: "Noche" },
+        { id: 8, colegio_id: 1, nombre: "4° 4 ANALÓGICA GA", turno: "Noche" },
+        { id: 9, colegio_id: 1, nombre: "4° 1 MONTAJE GB", turno: "Mañana" },
+        { id: 10, colegio_id: 2, nombre: "4° 3 MONTAJE GB", turno: "Mañana" },
+        { id: 11, colegio_id: 2, nombre: "5° 3 DAS GB", turno: "Mañana" },
+        { id: 12, colegio_id: 2, nombre: "5° 3 DAS GA", turno: "Mañana" },
+        { id: 13, colegio_id: 3, nombre: "4° 1 SISTEMA OPERATIVO GB", turno: "Mañana" }
       ],
-      "mar_tec1_ea": [
-        { id: 6, nombre: "García, Juan", estado: "P", nota: "" },
-        { id: 7, nombre: "López, Matías", estado: "P", nota: "" }
+      estudiantes: [
+        { id: 80, curso_id: 10, apellido: "JANNON", nombre: "MATEO", faltas: 3, nota: 8 },
+        { id: 81, curso_id: 10, apellido: "LAVIN", nombre: "LARA", faltas: 7, nota: 7 },
+        { id: 82, curso_id: 10, apellido: "OJEDA", nombre: "PAULA", faltas: 5, nota: 9 },
+        { id: 83, curso_id: 10, apellido: "ORTIZ", nombre: "LEANDRO EZEQUIEL", faltas: 6, nota: 7 },
+        { id: 84, curso_id: 10, apellido: "PEREZ", nombre: "AGUSTINA", faltas: 8, nota: 6 },
+        { id: 85, curso_id: 10, apellido: "PEREZ", nombre: "VALENTINO", faltas: 7, nota: 8 },
+        { id: 86, curso_id: 10, apellido: "SACCO", nombre: "BRUNO AGUSTIN", faltas: 3, nota: 9 },
+        { id: 87, curso_id: 10, apellido: "SALINAS RUIZ", nombre: "AXEL URIEL", faltas: 2, nota: 8 },
+        { id: 88, curso_id: 10, apellido: "SOLA", nombre: "ROMAN", faltas: 5, nota: 8 },
+        { id: 89, curso_id: 10, apellido: "TABELA", nombre: "-", faltas: 18, nota: 4 },
+        { id: 90, curso_id: 10, apellido: "TAHUIL", nombre: "MATEO ELIAS", faltas: 5, nota: 7 },
+        { id: 91, curso_id: 10, apellido: "TOCCI", nombre: "TOBIA", faltas: 6, nota: 8 },
+        { id: 92, curso_id: 10, apellido: "VILLAGRA", nombre: "LAUTARO EZEQUIEL", faltas: 5, nota: 9 }
       ],
-      "mie_tec2_das": [
-        { id: 8, nombre: "Martínez, Axel", estado: "P", nota: "" },
-        { id: 9, nombre: "Navarro, Bruno", estado: "P", nota: "" }
-      ],
-      "mie_tec1_ea": [
-        { id: 10, nombre: "Pérez, Gonzalo", estado: "P", nota: "" },
-        { id: 11, nombre: "Romero, Kevin", estado: "P", nota: "" }
-      ],
-      "vie_tec1_mpe": [
-        { id: 12, nombre: "Acosta, Mateo", estado: "P", nota: "" },
-        { id: 13, nombre: "Cardozo, Sofía", estado: "P", nota: "" },
-        { id: 14, nombre: "Sosa, Valentín", estado: "P", nota: "" }
-      ]
+      asistencias: {}
     };
 
-    let base = JSON.parse(localStorage.getItem("registro_docente_simple")) || baseInicial;
-    let historial = [];
+    let state = JSON.parse(localStorage.getItem('dashboard_tuprofeweb_data')) || DATOS_BASE;
+    let colegioActivoId = 2;
+    let cursoActivoId = 10;
+    let fechaHoy = new Date().toISOString().split('T')[0];
 
-    document.getElementById("fechaClase").value = new Date().toISOString().split("T")[0];
-    let materiaActual = document.getElementById("selMateria").value;
+    function guardarEstado() {
+      localStorage.setItem('dashboard_tuprofeweb_data', JSON.stringify(state));
+      actualizarKPIs();
+    }
 
-    function renderAlumnos() {
-      const contenedor = document.getElementById("lista");
-      contenedor.innerHTML = "";
-      const lista = base[materiaActual] || [];
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('fecha-hoy-txt').innerText = new Date().toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
+      document.getElementById('fecha-asistencia').value = fechaHoy;
+      renderColegios();
+      seleccionarColegio(colegioActivoId);
+      seleccionarCurso(cursoActivoId);
+      actualizarKPIs();
+      iniciarGrafico();
+    });
 
-      let cp = 0, ca = 0, ct = 0;
+    function renderColegios() {
+      const container = document.getElementById('lista-colegios');
+      container.innerHTML = '';
+      state.colegios.forEach(col => {
+        const esActivo = col.id === colegioActivoId;
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-between ${
+          esActivo ? 'bg-amber-500 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+        }`;
+        btn.innerHTML = `<span>${col.nombre}</span> <i class="fa-solid fa-chevron-right text-xs opacity-70"></i>`;
+        btn.onclick = () => seleccionarColegio(col.id);
+        container.appendChild(btn);
+      });
+    }
 
-      lista.forEach((al, idx) => {
-        if (al.estado === "P") cp++;
-        if (al.estado === "A") ca++;
-        if (al.estado === "T") ct++;
+    function seleccionarColegio(colId) {
+      colegioActivoId = colId;
+      renderColegios();
+      const col = state.colegios.find(c => c.id === colId);
+      document.getElementById('colegio-seleccionado-titulo').innerText = col.nombre;
 
-        const row = document.createElement("div");
-        row.className = "alumno-row";
-        row.innerHTML = `
-          <div class="alumno-info">
-            <div class="alumno-name">${al.nombre}</div>
-            <div class="alumno-sub">#${idx + 1}</div>
+      const cursos = state.cursos.filter(c => c.colegio_id === colId);
+      const container = document.getElementById('lista-cursos');
+      container.innerHTML = '';
+
+      cursos.forEach(cur => {
+        const count = state.estudiantes.filter(e => e.curso_id === cur.id).length;
+        const card = document.createElement('div');
+        const esSeleccionado = cur.id === cursoActivoId;
+        card.className = `p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
+          esSeleccionado ? 'border-amber-500 bg-amber-50/50 shadow-sm' : 'border-slate-200 hover:border-amber-400 bg-white'
+        }`;
+        card.onclick = () => seleccionarCurso(cur.id);
+        card.innerHTML = `
+          <div class="flex items-start justify-between">
+            <h4 class="font-bold text-slate-800 text-sm">${cur.nombre}</h4>
+            <span class="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600">${cur.turno}</span>
           </div>
-          <div class="alumno-ctrls">
-            <input type="text" 
-                   class="input-nota" 
-                   inputmode="numeric" 
-                   placeholder="-" 
-                   value="${al.nota || ''}" 
-                   onfocus="this.dataset.old = this.value"
-                   onchange="modificarNota(this, ${idx})">
-            <button class="btn-asist st-${al.estado}" 
-                    onclick="cambiarAsistencia(${idx})">${al.estado}</button>
-          </div>
+          <p class="text-xs text-slate-500 mt-2"><i class="fa-solid fa-user-group text-slate-400 mr-1"></i> ${count} alumnos</p>
         `;
-        contenedor.appendChild(row);
+        container.appendChild(card);
       });
-
-      document.getElementById("cntP").textContent = cp;
-      document.getElementById("cntA").textContent = ca;
-      document.getElementById("cntT").textContent = ct;
-
-      localStorage.setItem("registro_docente_simple", JSON.stringify(base));
-      document.getElementById("btnUndo").disabled = (historial.length === 0);
     }
 
-    function cambiarAsistencia(idx) {
-      const ciclo = ["P", "A", "T"];
-      const alumno = base[materiaActual][idx];
-      const estadoViejo = alumno.estado;
-      const estadoNuevo = ciclo[(ciclo.indexOf(estadoViejo) + 1) % ciclo.length];
+    function seleccionarCurso(curId) {
+      cursoActivoId = curId;
+      seleccionarColegio(colegioActivoId);
+      const cur = state.cursos.find(c => c.id === curId);
+      const col = state.colegios.find(c => c.id === cur.colegio_id);
+      
+      document.getElementById('curso-activo-titulo').innerText = cur.nombre;
+      document.getElementById('badge-turno').innerText = cur.turno;
+      
+      const alumnos = state.estudiantes.filter(e => e.curso_id === curId);
+      document.getElementById('curso-activo-subtitulo').innerText = `${alumnos.length} estudiantes registrados &middot; ${col.nombre}`;
 
-      historial.push({
-        tipo: "asistencia",
-        materia: materiaActual,
-        idx: idx,
-        anterior: estadoViejo,
-        nombre: alumno.nombre
-      });
-
-      alumno.estado = estadoNuevo;
-      renderAlumnos();
+      renderTablaEstudiantes();
     }
 
-    function modificarNota(input, idx) {
-      const alumno = base[materiaActual][idx];
-      const notaVieja = input.dataset.old || alumno.nota || "";
-      let val = input.value.trim().replace(",", ".");
+    function renderTablaEstudiantes() {
+      const tbody = document.getElementById('tabla-estudiantes-tbody');
+      tbody.innerHTML = '';
+      const alumnos = state.estudiantes.filter(e => e.curso_id === cursoActivoId);
 
-      if (val === "") {
-        if (notaVieja !== "") {
-          historial.push({ tipo: "nota", materia: materiaActual, idx: idx, anterior: notaVieja, nombre: alumno.nombre });
-          alumno.nota = "";
-          renderAlumnos();
-        }
+      if (alumnos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 font-medium"><i class="fa-solid fa-folder-open text-2xl mb-2 block"></i>No hay estudiantes en este curso. Hacé clic en "+ Alumno" o "Subir Excel".</td></tr>`;
         return;
       }
 
-      let n = parseFloat(val);
-      if (isNaN(n) || n < 1 || n > 10) {
-        toast("⚠️ Ingresá una nota válida (1 a 10)");
-        input.value = notaVieja;
-      } else {
-        const nStr = n.toString();
-        if (nStr !== notaVieja) {
-          historial.push({ tipo: "nota", materia: materiaActual, idx: idx, anterior: notaVieja, nombre: alumno.nombre });
-          alumno.nota = nStr;
-          toast(`Nota guardada: ${nStr}`);
-          renderAlumnos();
+      const fecha = document.getElementById('fecha-asistencia').value;
+
+      alumnos.forEach((est, idx) => {
+        const key = `${fecha}_${est.id}`;
+        const estado = state.asistencias[key] || 'P';
+
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-medium text-slate-400 text-xs">${idx + 1}</td>
+          <td class="py-3 px-4 font-semibold text-slate-800">
+            ${est.apellido} ${est.nombre !== '-' ? est.nombre : ''}
+          </td>
+          <td class="py-3 px-4 text-center">
+            <div class="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 shadow-xs">
+              <button onclick="marcarIndividual(${est.id}, 'P')" class="px-2.5 py-1 text-xs font-bold rounded-md transition ${estado === 'P' ? 'bg-emerald-500 text-white' : 'text-slate-600 hover:bg-slate-200'}">P</button>
+              <button onclick="marcarIndividual(${est.id}, 'A')" class="px-2.5 py-1 text-xs font-bold rounded-md transition ${estado === 'A' ? 'bg-rose-500 text-white' : 'text-slate-600 hover:bg-slate-200'}">A</button>
+              <button onclick="marcarIndividual(${est.id}, 'J')" class="px-2.5 py-1 text-xs font-bold rounded-md transition ${estado === 'J' ? 'bg-blue-500 text-white' : 'text-slate-600 hover:bg-slate-200'}">J</button>
+              <button onclick="marcarIndividual(${est.id}, 'T')" class="px-2.5 py-1 text-xs font-bold rounded-md transition ${estado === 'T' ? 'bg-amber-500 text-white' : 'text-slate-600 hover:bg-slate-200'}">T</button>
+            </div>
+          </td>
+          <td class="py-3 px-4 text-center">
+            <input type="number" min="1" max="10" value="${est.nota || 7}" onchange="cambiarNota(${est.id}, this.value)" class="w-14 text-center font-bold text-xs py-1 border rounded bg-white ${est.nota >= 7 ? 'text-emerald-700 border-emerald-300' : 'text-rose-600 border-rose-300'}">
+          </td>
+          <td class="py-3 px-4 text-center">
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${est.faltas >= 15 ? 'bg-rose-100 text-rose-700' : (est.faltas >= 8 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700')}">
+              ${est.faltas || 0}
+            </span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="eliminarEstudiante(${est.id})" class="text-slate-400 hover:text-rose-600 p-1.5 transition">
+              <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function marcarIndividual(estId, estado) {
+      const fecha = document.getElementById('fecha-asistencia').value;
+      state.asistencias[`${fecha}_${estId}`] = estado;
+      guardarEstado();
+      renderTablaEstudiantes();
+    }
+
+    function marcarTodos(estado) {
+      const fecha = document.getElementById('fecha-asistencia').value;
+      const alumnos = state.estudiantes.filter(e => e.curso_id === cursoActivoId);
+      alumnos.forEach(est => {
+        state.asistencias[`${fecha}_${est.id}`] = estado;
+      });
+      guardarEstado();
+      renderTablaEstudiantes();
+    }
+
+    function cambiarNota(estId, valor) {
+      const est = state.estudiantes.find(e => e.id === estId);
+      if (est) {
+        est.nota = parseFloat(valor) || 0;
+        guardarEstado();
+      }
+    }
+
+    function cambiarFechaAsistencia() {
+      renderTablaEstudiantes();
+    }
+
+    function abrirModalNuevoAlumno() {
+      const apellido = prompt("Apellido del estudiante:");
+      if (!apellido) return;
+      const nombre = prompt("Nombre del estudiante (o '-' si no tiene):") || "-";
+      state.estudiantes.push({
+        id: Date.now(),
+        curso_id: cursoActivoId,
+        apellido: apellido.toUpperCase().trim(),
+        nombre: nombre.toUpperCase().trim(),
+        faltas: 0,
+        nota: 7
+      });
+      guardarEstado();
+      seleccionarCurso(cursoActivoId);
+    }
+
+    function eliminarEstudiante(id) {
+      if (confirm("¿Estás seguro de eliminar este estudiante del curso?")) {
+        state.estudiantes = state.estudiantes.filter(e => e.id !== id);
+        guardarEstado();
+        seleccionarCurso(cursoActivoId);
+      }
+    }
+
+    function importarArchivoExcel(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+        let cargados = 0;
+        rows.forEach((r, idx) => {
+          if (idx === 0) return;
+          const texto = String(r[0] || '').trim();
+          if (!texto || texto.toLowerCase().includes('total')) return;
+
+          let apellido = texto, nombre = '-';
+          if (texto.includes(',')) {
+            const partes = texto.split(',');
+            apellido = partes[0].trim();
+            nombre = partes.slice(1).join(' ').trim();
+          } else {
+            const palabras = texto.split(/\s+/);
+            if (palabras.length > 1) {
+              apellido = palabras[0];
+              nombre = palabras.slice(1).join(' ');
+            }
+          }
+
+          state.estudiantes.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            curso_id: cursoActivoId,
+            apellido: apellido.toUpperCase(),
+            nombre: nombre.toUpperCase(),
+            faltas: 0,
+            nota: 7
+          });
+          cargados++;
+        });
+
+        guardarEstado();
+        seleccionarCurso(cursoActivoId);
+        alert(`¡Éxito! Se importaron ${cargados} estudiantes del Excel.`);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function exportarTodoExcel() {
+      const wb = XLSX.utils.book_new();
+      const dataEstudiantes = state.estudiantes.map(e => {
+        const cur = state.cursos.find(c => c.id === e.curso_id);
+        const col = state.colegios.find(c => c.id === cur?.colegio_id);
+        return {
+          "Colegio": col?.nombre || "",
+          "Curso": cur?.nombre || "",
+          "Apellido": e.apellido,
+          "Nombre": e.nombre,
+          "Total Faltas": e.faltas,
+          "Última Calificación": e.nota
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(dataEstudiantes);
+      XLSX.utils.book_append_sheet(wb, ws, "Estudiantes y Notas");
+      XLSX.writeFile(wb, "Respaldo_Escolar_TuProfeWeb.xlsx");
+    }
+
+    function actualizarKPIs() {
+      document.getElementById('stat-total-alumnos').innerText = state.estudiantes.length;
+      document.getElementById('stat-colegios-count').innerText = state.colegios.length;
+      const enRiesgo = state.estudiantes.filter(e => (e.faltas || 0) >= 10).length;
+      document.getElementById('stat-alumnos-riesgo').innerText = enRiesgo;
+    }
+
+    let chartInstance = null;
+    function iniciarGrafico() {
+      const ctx = document.getElementById('graficoAsistencias').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'],
+          datasets: [{
+            label: '% Presentes',
+            data: [92, 88, 85, 94, 83],
+            backgroundColor: '#e09f00',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } }
         }
+      });
+    }
+
+    function toggleDarkMode() {
+      const body = document.getElementById('body-app');
+      body.classList.toggle('bg-slate-900');
+      body.classList.toggle('text-white');
+      const icon = document.getElementById('theme-icon');
+      if (body.classList.contains('bg-slate-900')) {
+        icon.className = 'fa-solid fa-sun text-lg text-amber-400';
+      } else {
+        icon.className = 'fa-solid fa-moon text-lg';
       }
     }
-
-    function deshacer() {
-      if (historial.length === 0) return;
-      const accion = historial.pop();
-
-      if (accion.tipo === "asistencia") {
-        base[accion.materia][accion.idx].estado = accion.anterior;
-        toast(`↩ ${accion.nombre}: volvió a ${accion.anterior}`);
-      } else if (accion.tipo === "nota") {
-        base[accion.materia][accion.idx].nota = accion.anterior;
-        toast(`↩ ${accion.nombre}: nota restaurada`);
-      }
-      renderAlumnos();
-    }
-
-    function cambiarMateria() {
-      materiaActual = document.getElementById("selMateria").value;
-      renderAlumnos();
-    }
-
-    function agregarAlumno() {
-      const nom = prompt("Apellido y Nombre del alumno:");
-      if (nom && nom.trim()) {
-        if (!base[materiaActual]) base[materiaActual] = [];
-        base[materiaActual].push({ id: Date.now(), nombre: nom.trim(), estado: "P", nota: "" });
-        renderAlumnos();
-        toast("Alumno agregado");
-      }
-    }
-
-    function guardar() {
-      localStorage.setItem("registro_docente_simple", JSON.stringify(base));
-      toast("¡Lista guardada!");
-    }
-
-    function toast(txt) {
-      const t = document.getElementById("toast");
-      t.textContent = txt;
-      t.style.opacity = "1";
-      setTimeout(() => { t.style.opacity = "0"; }, 2000);
-    }
-
-    renderAlumnos();
   </script>
 </body>
 </html>
